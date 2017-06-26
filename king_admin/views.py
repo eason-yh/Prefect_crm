@@ -40,3 +40,7 @@ def display_table_objs(request, app_name, table_name):
                                                         "orderby_key":orderby_key,
                                                         "previous_orderby": request.GET.get("o", '') ,
                                                         "search_text": request.GET.get('_q',''),})
+
+def table_obj_change(request, app_name ,table_name, obj_id):
+
+    return render(request, "king_admin/table_obj_change.html")

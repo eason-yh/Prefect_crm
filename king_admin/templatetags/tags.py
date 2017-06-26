@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-
 from django import template
 from django.utils.safestring import mark_safe
-import time
+from django.utils.timezone import datetime, timedelta
+
 
 register = template.Library()
 
@@ -20,15 +20,19 @@ def get_query_sets(admin_class):
 def build_table_row(obj,admin_class):
     row_ele = ""
 
-    for column in admin_class.list_display:
+    for index,column in enumerate(admin_class.list_display):
         field_obj = obj._meta.get_field(column)
         if field_obj.choices:
             column_data = getattr(obj,"get_%s_display" %column)()
         else:
             column_data = getattr(obj,column)
         if type(column_data).__name__ == 'datetime':
-
             column_data = column_data.strftime("%Y-%m-%d %H:%M:%S")
+        if index == 0:#add a tag,可以跳转到修改页面
+            column_data = "<a href='{request_path}{obj_id}/change/'>{data}</a>".format(request_path='',
+                                                                                        obj_id=obj.id,
+                                                                                        data=column_data,)
+
 
         row_ele += "<td>%s</td>" % column_data
     return mark_safe(row_ele)
@@ -89,24 +93,54 @@ def render_page_ele(loop_counter,query_sets, filter_condtions):
         return ''
 
 @register.simple_tag
-def render_filter_ele(condtion, admin_class, filter_condtions):
-    select_ele = '''<select class="form-control", name='%s'><option value="">-----</option>''' %condtion
-    filed_obj = admin_class.model._meta.get_field(condtion)
+def render_filter_ele(filter_field, admin_class, filter_condtions):
+    select_ele = '''<select class="form-control", name={filter_field}><option value="">-----</option>'''
+    filed_obj = admin_class.model._meta.get_field(filter_field)
     if filed_obj.choices:
         selected = ''
         for choice_item in filed_obj.choices:
-            if filter_condtions.get(condtion) == str(choice_item[0]):
+            if filter_condtions.get(filter_field) == str(choice_item[0]):
                 selected = "selected"
             select_ele += '''<option value='%s' %s>%s</option>''' %(choice_item[0],selected,choice_item[1])
             selected = ''
     if type(filed_obj).__name__ == "ForeignKey":
         selected = ''
         for choice_item in filed_obj.get_choices()[1:]:
-            if filter_condtions.get(condtion) == str(choice_item[0]):
+            if filter_condtions.get(filter_field) == str(choice_item[0]):
                 selected = "selected"
             select_ele += '''<option value='%s' %s>%s</option>''' % (choice_item[0],selected,choice_item[1])
             selected = ''
+    if type(filed_obj).__name__ in ['DateTimeField', 'DateField']:
+
+        date_els = []
+        today_ele = datetime.now().date()
+        date_els.append(['今天', datetime.now().date()])
+        date_els.append(['昨天', today_ele - timedelta(days=1)])
+        date_els.append(['近7天', today_ele - timedelta(days=7)])
+        date_els.append(['本月', today_ele.replace(day=1)])
+        date_els.append(['近30天', today_ele - timedelta(days=30)])
+        date_els.append(['近90天', today_ele - timedelta(days=90)])
+        date_els.append(['近180天', today_ele - timedelta(days=180)])
+        date_els.append(['本年', today_ele.replace(month=1, day=1)])
+        date_els.append(['近365天', today_ele - timedelta(days=365)])
+
+        '''yesterday_ele = today_ele - timedelta(days=1)
+        last7days_ele = today_ele - timedelta(days=7)
+        mtd_ele = today_ele.replace(day=1)
+        last30days_ele = today_ele - timedelta(days=30)
+        last90days_ele = today_ele - timedelta(days=90)
+        last180days_ele = today_ele - timedelta(days=180)
+        ytd_ele = today_ele.replace(month=1, day=1)
+        last365days_ele = today_ele - timedelta(days=365)'''
+        selected = ''
+        for item in date_els:
+            select_ele += '''<option value='%s' %s>%s</option>''' % (item[1],selected,item[0])
+        filter_field_name = "%s__gt" %filter_field
+    else:
+        filter_field_name = filter_field
     select_ele += "</select>"
+    select_ele = select_ele.format(filter_field=filter_field_name)
+
     return mark_safe(select_ele)
 
 @register.simple_tag
