@@ -29,7 +29,7 @@ def build_table_row(obj,admin_class):
         if type(column_data).__name__ == 'datetime':
             column_data = column_data.strftime("%Y-%m-%d %H:%M:%S")
         if index == 0:#add a tag,可以跳转到修改页面
-            column_data = "<a href='{request_path}{obj_id}/change/'>{data}</a>".format(request_path='',
+            column_data = "<a href='{request_path}{obj_id}/change/'>{data}</a>".format(request_path=request.path,
                                                                                         obj_id=obj.id,
                                                                                         data=column_data,)
 
