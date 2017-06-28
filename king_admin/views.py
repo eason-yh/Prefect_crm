@@ -3,7 +3,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # Create your views here.
 from king_admin import  king_admin
 from king_admin.utils import table_filter, table_sort, table_search
-
+from king_admin.forms import create_model_form
 import importlib
 
 
@@ -41,6 +41,17 @@ def display_table_objs(request, app_name, table_name):
                                                         "previous_orderby": request.GET.get("o", '') ,
                                                         "search_text": request.GET.get('_q',''),})
 
-def table_obj_change(request, app_name ,table_name, obj_id):
+def table_obj_change(request,app_name,table_name,obj_id):
 
-    return render(request, "king_admin/table_obj_change.html")
+    admin_class = king_admin.enabled_admin[app_name][table_name]
+    model_form_class = create_model_form(request,admin_class)
+    obj = admin_class.model.objects.get(id=obj_id)
+    if request.method == "POST":
+        form_obj = model_form_class(request.POST,instance=obj)#更新
+        if form_obj.is_valid():
+            form_obj.save()
+    else:
+        obj = admin_class.model.objects.get(id=obj_id)
+        form_obj = model_form_class(instance=obj)
+
+    return render(request, "king_admin/table_obj_change.html",{"form_obj":form_obj})

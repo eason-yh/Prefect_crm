@@ -17,7 +17,7 @@ def get_query_sets(admin_class):
     return admin_class.model.objects.all()
 
 @register.simple_tag
-def build_table_row(obj,admin_class):
+def build_table_row(request,obj,admin_class):
     row_ele = ""
 
     for index,column in enumerate(admin_class.list_display):
@@ -29,7 +29,7 @@ def build_table_row(obj,admin_class):
         if type(column_data).__name__ == 'datetime':
             column_data = column_data.strftime("%Y-%m-%d %H:%M:%S")
         if index == 0:#add a tag,可以跳转到修改页面
-            column_data = "<a href='{request_path}{obj_id}/change/'>{data}</a>".format(request_path=request.path,
+            column_data = "<a href='{request_path}/{obj_id}/change/'>{data}</a>".format(request_path=request.path,
                                                                                         obj_id=obj.id,
                                                                                         data=column_data,)
 
