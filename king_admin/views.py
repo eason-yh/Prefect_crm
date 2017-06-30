@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # Create your views here.
 from king_admin import  king_admin
@@ -41,6 +41,21 @@ def display_table_objs(request, app_name, table_name):
                                                         "previous_orderby": request.GET.get("o", '') ,
                                                         "search_text": request.GET.get('_q',''),})
 
+def table_obj_add(request,app_name,table_name):
+    admin_class = king_admin.enabled_admin[app_name][table_name]
+    model_form_class = create_model_form(request,admin_class)
+    if request.method == "POST":
+        form_obj = model_form_class(request.POST)
+        if form_obj.is_valid():
+            form_obj.save()
+            return redirect(request.path.replace("/add/",""))
+    else:
+
+        form_obj = model_form_class()
+
+    return render(request, "king_admin/table_obj_add.html", {"form_obj":form_obj,
+                                                             'admin_class': admin_class,})
+
 def table_obj_change(request,app_name,table_name,obj_id):
 
     admin_class = king_admin.enabled_admin[app_name][table_name]
@@ -51,7 +66,8 @@ def table_obj_change(request,app_name,table_name,obj_id):
         if form_obj.is_valid():
             form_obj.save()
     else:
-        obj = admin_class.model.objects.get(id=obj_id)
+        #obj = admin_class.model.objects.get(id=obj_id)
         form_obj = model_form_class(instance=obj)
 
-    return render(request, "king_admin/table_obj_change.html",{"form_obj":form_obj})
+    return render(request, "king_admin/table_obj_change.html",{"form_obj":form_obj,
+                                                               'admin_class':admin_class,})

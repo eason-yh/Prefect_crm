@@ -9,11 +9,15 @@ class BaseAdmin(object):
     list_filters = []
     search_fields = []
     list_per_page = '3'
+    ordering = None
+    filter_horizontal = []
 
 class CustomerAdmin(BaseAdmin):
     list_display = ['id', 'name', 'qq', 'source', 'consultant', 'consult_course', 'date']
     list_filters = ['source', 'consultant', 'consult_course', 'date', ]
     search_fields = ['qq', 'name', 'consultant__name', ]
+    filter_horizontal = ('tags',)
+    ordering = 'id'
 
 class CustomerFollowUpAdmin(BaseAdmin):
     list_display = ('customer', 'consultant', 'date')

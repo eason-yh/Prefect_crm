@@ -165,4 +165,39 @@ def build_table_header_column(column,orderby_key,filter_condtions):
     ele = ele.format(orderby_key=orderby_key,column=column,sort_icon=sort_icon,filters=filters)
     return mark_safe(ele)
 
+@register.simple_tag
+def get_model_name(admin_class):
+    return admin_class.model._meta.verbose_name
 
+@register.simple_tag
+def get_m2m_obj_list(admin_class,field,form_obj):
+    '''返回m2m所有待选数据'''
+    #表结构对象的某个字段
+    field_obj = getattr(admin_class.model, field.name)
+    all_obj_list = field_obj.rel.to.objects.all()
+
+    #单条数据的对象中的某个字段
+    if form_obj.instance.id:
+        obj_instance_field = getattr(form_obj.instance,field.name)
+        selected_obj_list = obj_instance_field.all()
+    else:#代表这是在创建一条新的记录
+        return all_obj_list
+
+    standby_obj_list = []
+    for obj in all_obj_list:
+        if obj not in selected_obj_list:
+            standby_obj_list.append(obj)
+    return standby_obj_list
+    #return field_obj.rel.to.objects.all()
+
+@register.simple_tag
+def get_m2m_selected_obj_list(form_obj,field):
+    '''返回已选择的m2m数据'''
+    if form_obj.instance.id:
+        field_obj = getattr(form_obj.instance,field.name)
+        return field_obj.all()
+
+@register.simple_tag
+def print_obj_methods(obj):
+    print("debug %s".center("-",50) % obj)
+    print(dir(obj))
