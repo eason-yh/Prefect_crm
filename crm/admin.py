@@ -1,5 +1,6 @@
 from django.contrib import admin
 from crm import models
+from django.shortcuts import render
 
 # Register your models here.
 
@@ -10,6 +11,18 @@ class CustomerAdmin(admin.ModelAdmin):
     raw_id_fields = ('consult_course',)
     filter_horizontal = ('tags',)
     #list_editable = ('status',)
+
+    # actions = ["test_action",]
+    #
+    # def test_action(self,request,arg2,):
+    #     print('test acction:',self,request,arg2)
+    #     return render(request,"king_admin/table_obj_delete.html")
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user','name')
+
+
+
 
 admin.site.register(models.Customer,CustomerAdmin)
 admin.site.register(models.CustomerFollowUp)

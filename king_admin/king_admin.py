@@ -11,6 +11,11 @@ class BaseAdmin(object):
     list_per_page = '3'
     ordering = None
     filter_horizontal = []
+    actions = ["delete_selected_objs",]
+
+    def delete_selected_objs(self,request,querysets):
+        print("delete_selected_objs",self,request,querysets)
+
 
 class CustomerAdmin(BaseAdmin):
     list_display = ['id', 'name', 'qq', 'source', 'consultant', 'consult_course', 'date']

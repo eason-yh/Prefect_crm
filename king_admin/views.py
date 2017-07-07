@@ -41,6 +41,18 @@ def display_table_objs(request, app_name, table_name):
                                                         "previous_orderby": request.GET.get("o", '') ,
                                                         "search_text": request.GET.get('_q',''),})
 
+def table_obj_delete(request,app_name,table_name,obj_id):
+    admin_class = king_admin.enabled_admin[app_name][table_name]
+    objs = admin_class.model.objects.filter(id=obj_id)
+    if request.method == "POST":
+        objs.delete()
+        return redirect("/king_admin/%s/%s" %(app_name,table_name))
+
+    return render(request,"king_admin/table_obj_delete.html",{"objs":objs,
+                                                              "admin_class":admin_class,
+                                                              "app_name":app_name,
+                                                              "table_name":table_name,})
+
 def table_obj_add(request,app_name,table_name):
     admin_class = king_admin.enabled_admin[app_name][table_name]
     model_form_class = create_model_form(request,admin_class)
@@ -54,7 +66,8 @@ def table_obj_add(request,app_name,table_name):
         form_obj = model_form_class()
 
     return render(request, "king_admin/table_obj_add.html", {"form_obj":form_obj,
-                                                             'admin_class': admin_class,})
+                                                             'admin_class': admin_class,
+                                                             'app_name':app_name,})
 
 def table_obj_change(request,app_name,table_name,obj_id):
 
@@ -70,4 +83,6 @@ def table_obj_change(request,app_name,table_name,obj_id):
         form_obj = model_form_class(instance=obj)
 
     return render(request, "king_admin/table_obj_change.html",{"form_obj":form_obj,
-                                                               'admin_class':admin_class,})
+                                                               'admin_class':admin_class,
+                                                               "app_name": app_name,
+                                                               "table_name": table_name,})
