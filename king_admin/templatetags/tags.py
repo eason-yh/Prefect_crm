@@ -275,3 +275,10 @@ def display_obj_related(objs):
         model_class = objs[0]._meta.model
         #model_name = objs[0]._meta.model_name
         return mark_safe(recursive_related_objs_lookup(objs))
+
+@register.simple_tag
+def get_actions_verbose_name(admin_class,action):
+    action_func = getattr(admin_class,action)
+    return action_func.display_name if hasattr(action_func,'display_name') else action
+
+

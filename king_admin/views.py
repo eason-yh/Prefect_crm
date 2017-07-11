@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # Create your views here.
-from king_admin import  king_admin
+from king_admin import king_admin
 from king_admin.utils import table_filter, table_sort, table_search
 from king_admin.forms import create_model_form
 import importlib
@@ -18,6 +18,21 @@ def display_table_objs(request, app_name, table_name):
     #model_obj = getattr(model_module,table_name)
     admin_class = king_admin.enabled_admin[app_name][table_name]
     #object_list = admin_class.model.objects.all()
+    if request.method == "POST":#action 来了
+
+        print(request.POST)
+        selected_ids = request.POST.get("selected_ids")
+        action = request.POST.get("action")
+        if selected_ids:
+            selected_objs = admin_class.model.objects.filter(id__in=selected_ids.split(','))
+        else:
+            raise KeyError("No object selected")
+        if hasattr(admin_class,action):
+            action_func = getattr(admin_class,action)
+            request._admin_action = action
+            return action_func(admin_class,request,selected_objs)
+
+
     object_list, filter_condtions = table_filter(request,admin_class)#过滤后的结果
     object_list = table_search(request,admin_class,object_list)
     object_list,orderby_key = table_sort(request,admin_class,object_list)#排序后的结果
@@ -44,14 +59,15 @@ def display_table_objs(request, app_name, table_name):
 def table_obj_delete(request,app_name,table_name,obj_id):
     admin_class = king_admin.enabled_admin[app_name][table_name]
     objs = admin_class.model.objects.filter(id=obj_id)
+
     if request.method == "POST":
         objs.delete()
         return redirect("/king_admin/%s/%s" %(app_name,table_name))
 
-    return render(request,"king_admin/table_obj_delete.html",{"objs":objs,
+    return render(request,"king_admin/table_obj_delete.html",{"app_name": app_name,
+                                                              "table_name": table_name,
                                                               "admin_class":admin_class,
-                                                              "app_name":app_name,
-                                                              "table_name":table_name,})
+                                                              "objs": objs,})
 
 def table_obj_add(request,app_name,table_name):
     admin_class = king_admin.enabled_admin[app_name][table_name]
@@ -62,12 +78,12 @@ def table_obj_add(request,app_name,table_name):
             form_obj.save()
             return redirect(request.path.replace("/add/",""))
     else:
-
-        form_obj = model_form_class()
+            form_obj = model_form_class()
 
     return render(request, "king_admin/table_obj_add.html", {"form_obj":form_obj,
                                                              'admin_class': admin_class,
                                                              'app_name':app_name,})
+
 
 def table_obj_change(request,app_name,table_name,obj_id):
 
