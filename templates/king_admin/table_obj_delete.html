@@ -3,7 +3,11 @@
 {% block container %}
 
     {% display_obj_related objs %}
-
+    <ul style="color: red">
+        {% for k,v in errors.items %}
+            <li>{{ k }}:{{ v }}</li>
+        {% endfor %}
+    </ul>
     <form method="post"> {% csrf_token %}
         <input type="submit" class="btn btn-danger" value="Yes,I'am sure">
         <input type="hidden" value="yes" name="delete_confirm">

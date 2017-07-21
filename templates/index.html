@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block body %}
 <body>
 
@@ -13,12 +14,20 @@
           </button>
           <a class="navbar-brand" href="http://v3.bootcss.com/examples/dashboard/#">Eason PrefectCRM</a>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="http://v3.bootcss.com/examples/dashboard/#">{{ request.user }}</a></li>
-          </ul>
+          <form>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+                         aria-haspopup="true" aria-expanded="false">{{ request.user.name }} <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        <li><a href="#">配置</a></li>
+                        <li><a href="{% url 'acc_logout' %}">注销</a></li>
+                      </ul>
+                    </li>
+                </ul>
+              </div>
           </form>
-        </div>
       </div>
     </nav>
 
@@ -26,9 +35,9 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            {% for role in request.user.userprofile.roles.all %}
+            {% for role in request.user.roles.all %}
               {% for menu in role.menus.all %}
-                <li class= "active"><a href="{% url menu.url_name %}">{{ menu.name }}</a></li>
+                  <li class= "active"><a href="{% if menu.url_type == 0 %}{% url menu.url_name %}{% else %}{{ menu.url_name }}{% endif %}">{{                         menu.name }}</a></li>
               {% endfor %}
             {% endfor %}
           </ul>

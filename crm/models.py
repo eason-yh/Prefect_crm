@@ -1,11 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import (
+    BaseUserManager, AbstractBaseUser, PermissionsMixin
+)
+from django.utils.translation import ugettext_lazy as _
+from django.utils.safestring import mark_safe
 
 # Create your models here.
 
 class Customer(models.Model):
     '''客户信息表'''
-    name = models.CharField(max_length=32,blank=True,null=True)
+    name = models.CharField(max_length=32,blank=True,null=True,help_text="用户报名后请改为真实姓名")
     qq = models.CharField(max_length=64,unique=True)
     qq_name = models.CharField(max_length=64,blank=True,null=True)
     phone = models.CharField(max_length=64,blank=True,null=True)
@@ -198,18 +203,101 @@ class Payment(models.Model):
         verbose_name = "缴费记录表"
         verbose_name_plural = "缴费记录表"
 
-class UserProfile(models.Model):
-    '''账户表'''
-    user = models.OneToOneField(User)
+# class UserProfile(models.Model):
+#     '''账户表'''
+#     user = models.OneToOneField(User)
+#     name = models.CharField(max_length=32)
+#     roles = models.ManyToManyField("Role",blank=True,null=True)
+#
+#     def __str__(self):
+#         return self.name
+#
+#     class Meta:
+#         verbose_name = "账户表"
+#         verbose_name_plural = "账户表"
+
+class UserProfileManger(BaseUserManager):
+    def create_user(self, email, name, password=None):
+        """
+        Creates and saves a User with the given email, date of
+        birth and password.
+        """
+        if not email:
+            raise ValueError('Users must have an email address')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            name=name,
+        )
+
+        user.set_password(password)
+        self.is_active = True
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name, password):
+        """
+        Creates and saves a superuser with the given email, date of
+        birth and password.
+        """
+        user = self.create_user(
+            email,
+            password=password,
+            name=name,
+        )
+        user.is_active = True
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+
+
+
+class UserProfile(AbstractBaseUser,PermissionsMixin):
+    '''账号表'''
+    email = models.EmailField(
+        verbose_name='email address',
+        max_length=255,
+        unique=True,
+        null=True,
+    )
+    password = models.CharField(_('password'),max_length=128,
+                                help_text=mark_safe('''<a href='password/'>修改密码</a>'''))
     name = models.CharField(max_length=32)
-    roles = models.ManyToManyField("Role",blank=True,null=True)
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
+    roles = models.ManyToManyField("Role",blank=True)
+    objects = UserProfileManger()
 
-    def __str__(self):
-        return self.name
+    USERNAME_FIELD = 'email'#指定那个字段为用户名
+    REQUIRED_FIELDS = ['name']#那些字段是必须的
 
-    class Meta:
-        verbose_name = "账户表"
-        verbose_name_plural = "账户表"
+    def get_full_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def get_short_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def __str__(self):              # __unicode__ on Python 2
+        return self.email
+
+    def has_perm(self, perm, obj=None):
+        "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    def has_module_perms(self, app_label):
+        "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    @property
+    def is_staff(self):#判断他是不是一个合法账户
+        "Is the user a member of staff?"
+        # Simplest possible answer: All admins are staff
+        return self.is_admin
+
 
 class Role(models.Model):
     '''角色表'''
@@ -226,6 +314,9 @@ class Role(models.Model):
 class Menu(models.Model):
     '''菜单'''
     name = models.CharField(max_length=32)
+    url_type_choices = ((0,'alias'),
+                        (1,'absolute_url'),)
+    url_type = models.SmallIntegerField(choices=url_type_choices,default=0)
     url_name = models.CharField(max_length=64)
 
     def __str__(self):

@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from django import template
+from django.core.exceptions import FieldDoesNotExist
 from django.utils.safestring import mark_safe
 from django.utils.timezone import datetime, timedelta
 
@@ -21,18 +22,24 @@ def build_table_row(request,obj,admin_class):
     row_ele = ""
 
     for index,column in enumerate(admin_class.list_display):
-        field_obj = obj._meta.get_field(column)
-        if field_obj.choices:
-            column_data = getattr(obj,"get_%s_display" %column)()
-        else:
-            column_data = getattr(obj,column)
-        if type(column_data).__name__ == 'datetime':
-            column_data = column_data.strftime("%Y-%m-%d %H:%M:%S")
-        if index == 0:#add a tag,可以跳转到修改页面
-            column_data = "<a href='{request_path}/{obj_id}/change/'>{data}</a>".format(request_path=request.path,
-                                                                                        obj_id=obj.id,
-                                                                                        data=column_data,)
-
+        try:
+            field_obj = obj._meta.get_field(column)
+            if field_obj.choices:
+                column_data = getattr(obj,"get_%s_display" %column)()
+            else:
+                column_data = getattr(obj,column)
+            if type(column_data).__name__ == 'datetime':
+                column_data = column_data.strftime("%Y-%m-%d %H:%M:%S")
+            if index == 0:#add a tag,可以跳转到修改页面
+                column_data = "<a href='{request_path}/{obj_id}/change/'>{data}</a>".format(request_path=request.path,
+                                                                                            obj_id=obj.id,
+                                                                                            data=column_data,)
+        except FieldDoesNotExist as e:
+            if hasattr(admin_class,column):
+                column_func = getattr(admin_class,column)
+                admin_class.instance = obj
+                admin_class.request = request
+                column_data = column_func()
 
         row_ele += "<td>%s</td>" % column_data
     return mark_safe(row_ele)
@@ -144,7 +151,7 @@ def render_filter_ele(filter_field, admin_class, filter_condtions):
     return mark_safe(select_ele)
 
 @register.simple_tag
-def build_table_header_column(column,orderby_key,filter_condtions):
+def build_table_header_column(column,orderby_key,filter_condtions,admin_class):
     filters = ''
     for k,v in filter_condtions.items():
         filters += "&%s=%s" %(k,v)
@@ -162,7 +169,13 @@ def build_table_header_column(column,orderby_key,filter_condtions):
     else:#没有排序
         orderby_key = column
         sort_icon = ''
-    ele = ele.format(orderby_key=orderby_key,column=column,sort_icon=sort_icon,filters=filters)
+    try:
+        column_verbose_name = admin_class.model._meta.get_field(column).verbose_name.upper()
+    except FieldDoesNotExist as e:
+        column_verbose_name = getattr(admin_class,column).display_name.upper()
+        ele = '''<th><a href="javascript:void(0);">{column}</a></th>'''.format(column=column_verbose_name)
+        return mark_safe(ele)
+    ele = ele.format(orderby_key=orderby_key,column=column_verbose_name,sort_icon=sort_icon,filters=filters)
     return mark_safe(ele)
 
 @register.simple_tag

@@ -16,10 +16,13 @@ Including another URLconf
 
 from django.conf.urls import url, include
 from django.contrib import admin
+from perfect import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^crm/', include("crm.urls")),
+    url(r'^account/login/$', views.acc_login),
+    url(r'^account/logout/$', views.acc_logout, name="acc_logout"),
     url(r'^student/', include("student.urls")),
     url(r'^king_admin/', include("king_admin.urls"))
 ]

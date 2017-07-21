@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'prefect.urls'
+ROOT_URLCONF = 'perfect.urls'
 
 TEMPLATES = [
     {
@@ -70,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'prefect.wsgi.application'
+WSGI_APPLICATION = 'perfect.wsgi.application'
 
 
 # Database
@@ -136,3 +136,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "statics"),
 ]
+
+AUTH_USER_MODEL = 'crm.UserProfile'
+#明确告诉django你的login的访问地址
+LOGIN_URL = "/account/login/"
